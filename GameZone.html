@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GameZone Play 🎮</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#0b0b14;color:white;font-family:Arial,sans-serif}
+header{background:#171725;padding:17px 5%;border-bottom:2px solid #8055ff;position:sticky;top:0;z-index:100}
+nav{display:flex;align-items:center;justify-content:space-between;gap:15px;flex-wrap:wrap}
+.logo{font-size:28px;font-weight:bold;color:#b49aff;display:flex;align-items:center;gap:8px}
+input,select{background:#242438;color:white;border:1px solid #555;padding:12px;border-radius:8px}
+input{width:min(330px,90vw)}
+button{cursor:pointer;border:0;border-radius:8px;padding:11px 15px;font-weight:bold;transition:0.2s}
+button:hover{opacity:0.9;transform:scale(1.02)}
+.purple{background:#8055ff;color:white}
+.green{background:#10b981;color:white}
+.red{background:#ef4444;color:white}
+.nav-actions{display:flex;gap:10px;align-items:center}
+.cart-btn{position:relative;background:#242438;color:white;border:1px solid #8055ff}
+.cart-badge{position:absolute;top:-8px;right:-8px;background:#ef4444;color:white;border-radius:50%;padding:2px 7px;font-size:12px;font-weight:bold}
+.hero{padding:45px 7%;background:linear-gradient(110deg,#392080,#121225 65%,#075985)}
+.hero h1{font-size:clamp(32px,5vw,55px);margin:5px 0}
+.hero p{color:#ddd6fe;font-size:18px}
+.wrap{width:92%;max-width:1400px;margin:30px auto}
+.section-title{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.filters{display:flex;gap:10px;flex-wrap:wrap;margin:20px 0}
+.games{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:18px}
+.game{background:#191927;border:1px solid #303047;border-radius:12px;overflow:hidden;transition:.2s;display:flex;flex-direction:column;justify-content:space-between}
+.game:hover{transform:translateY(-4px);border-color:#9878ff}
+.game-image{width:100%;height:145px;position:relative;background:linear-gradient(135deg,#34245f,#111827);overflow:hidden}
+.game-image img{width:100%;height:100%;object-fit:cover;display:block}
+.image-fallback{display:none;width:100%;height:100%;align-items:center;justify-content:center;flex-direction:column;gap:6px;background:radial-gradient(circle at top,#6546a8,#171725);color:#fff;text-align:center;font-weight:bold}
+.image-fallback .emoji{font-size:42px}
+.game-info{padding:13px;display:flex;flex-direction:column;flex-grow:1}
+.game h3{font-size:16px;min-height:36px;margin:8px 0}
+.tag{font-size:12px;color:#b9a5ff}
+.price{color:#5ee6ad;font-weight:bold;font-size:18px;margin:10px 0}
+.game-btns{display:flex;gap:8px;margin-top:auto}
+.game-btns button{flex:1;padding:8px;font-size:13px}
+.play-area{background:#171725;border:1px solid #393951;border-radius:15px;padding:20px;margin:40px 0}
+.minigames{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:15px}
+.mini{background:#232338;padding:17px;border-radius:12px}
+.mini h3{margin-top:0;color:#c4b5fd}
+.mini button{margin:4px}
+#raceCanvas{display:block;width:100%;max-width:500px;height:auto;background:#292d37;border-radius:12px;margin:15px auto}
+
+/* Modales y Panels */
+.modal-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.75);display:none;align-items:center;justify-content:center;z-index:1000}
+.modal-overlay.active{display:flex}
+.modal-content{background:#191927;border:1px solid #8055ff;border-radius:15px;max-width:550px;width:90%;max-height:90vh;overflow-y:auto;padding:25px;position:relative}
+.modal-close{position:absolute;top:15px;right:15px;background:transparent;color:#aaa;font-size:24px;border:0;cursor:pointer}
+.modal-img{width:100%;height:220px;object-fit:cover;border-radius:10px;margin-bottom:15px}
+
+/* Sidebar Carrito */
+.cart-sidebar{position:fixed;top:0;right:-400px;width:100%;max-width:380px;height:100%;background:#171725;border-left:2px solid #8055ff;z-index:1001;transition:0.3s;padding:20px;display:flex;flex-direction:column}
+.cart-sidebar.open{right:0}
+.cart-header{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #333;padding-bottom:15px}
+.cart-items{flex-grow:1;overflow-y:auto;margin:15px 0}
+.cart-item{display:flex;justify-content:space-between;align-items:center;background:#242438;padding:10px;border-radius:8px;margin-bottom:10px}
+.cart-footer{border-top:1px solid #333;padding-top:15px}
+
+footer{text-align:center;padding:25px;background:#171725;color:#aaa}
+</style>
+</head>
+<body>
+
+<header>
+<nav>
+<div class="logo">🎮 GameZone PLAY</div>
+<input id="search" placeholder="🔎 Buscar un juego..." oninput="showGames()">
+<div class="nav-actions">
+<button class="purple" onclick="document.getElementById('play').scrollIntoView()">🕹️ Jugar ahora</button>
+<button class="cart-btn" onclick="toggleCart()">🛒 Carrito <span class="cart-badge" id="cartCount">0</span></button>
+</div>
+</nav>
+</header>
+
+<section class="hero">
+<p>BIENVENIDO AL UNIVERSO GAMER</p>
+<h1>Tu próxima aventura<br>comienza aquí.</h1>
+<p>Explora 100 juegos con super ofertas desde $10 hasta $150 MXN.</p>
+<button class="purple" onclick="document.getElementById('catalog').scrollIntoView()">EXPLORAR JUEGOS ↓</button>
+</section>
+
+<main class="wrap">
+<section id="catalog">
+<div class="section-title">
+<h2>🔥 Catálogo de juegos</h2>
+<span id="resultCount"></span>
+</div>
+
+<div class="filters">
+<select id="category" onchange="showGames()">
+<option value="">Todas las categorías</option>
+<option value="Aventura">Aventura</option>
+<option value="Acción">Acción</option>
+<option value="Carreras">Carreras</option>
+<option value="Indie">Indie</option>
+<option value="Terror">Terror</option>
+<option value="Estrategia">Estrategia</option>
+</select>
+<select id="order" onchange="showGames()">
+<option value="">Orden por categorías</option>
+<option value="low">Precio más bajo</option>
+<option value="high">Precio más alto</option>
+<option value="az">Nombre A-Z</option>
+</select>
+</div>
+
+<div class="games" id="games"></div>
+</section>
+
+<!-- ZONA DE JUEGOS NAVEGADOR -->
+<section id="play" class="play-area">
+<h2>🕹️ ¡Zona de minijuegos!</h2>
+<p>Elige un minijuego y juega aquí mismo en tu navegador.</p>
+<div class="mini" style="margin:15px 0;text-align:center">
+  <h2>⭐ Mis puntos: <span id="totalPoints">0</span></h2>
+  <p>Gana partidas para sumar puntos. Tus puntos se guardan en este navegador.</p>
+</div>
+
+<div class="minigames">
+<div class="mini">
+<h3>🚗 Mini carrera</h3>
+<p>Usa las flechas izquierda y derecha para esquivar los bloques.</p>
+<canvas id="raceCanvas" width="320" height="400"></canvas>
+<button class="purple" onclick="startRace()">▶ Empezar carrera</button>
+<div id="raceStatus">Pulsa empezar para jugar.</div>
+</div>
+
+<div class="mini">
+<h3>❌ Tres en raya</h3>
+<p>Juega contra la computadora en este dispositivo.</p>
+<div id="board" style="display:grid;grid-template-columns:repeat(3,65px);gap:5px;margin:15px 0"></div>
+<div id="ticStatus">Turno: X</div>
+<button class="purple" onclick="resetTic()">Reiniciar</button>
+</div>
+
+<div class="mini">
+<h3>🧠 Adivina el número</h3>
+<p>Encuentra el número secreto del 1 al 100.</p>
+<input id="guess" type="number" min="1" max="100" placeholder="Tu número" style="width:100%">
+<button class="purple" onclick="checkGuess()">Probar</button>
+<button onclick="newGuess()">Nuevo juego</button>
+<p id="guessStatus">¡Intenta adivinarlo!</p>
+</div>
+
+<div class="mini">
+<h3>⚡ Prueba tus reflejos</h3>
+<p>Pulsa el botón tantas veces como puedas en 10 segundos.</p>
+<h2 id="clickScore">0</h2>
+<button class="purple" id="clickButton" onclick="tapGame()">¡PULSA!</button>
+<button onclick="startClickGame()">Comenzar reto</button>
+<p id="clickStatus">¿Cuántos puntos conseguirás?</p>
+</div>
+
+<div class="mini">
+  <h3>🪨 Piedra, papel o tijera</h3>
+  <p>Si le ganas a la computadora, ganas 10 puntos.</p>
+  <button class="purple" onclick="playRPS('piedra')">🪨 Piedra</button>
+  <button class="purple" onclick="playRPS('papel')">📄 Papel</button>
+  <button class="purple" onclick="playRPS('tijera')">✂️ Tijera</button>
+  <p id="rpsStatus">¡Elige para jugar!</p>
+</div>
+
+<div class="mini">
+  <h3>🧠 Memoria de colores</h3>
+  <p>Encuentra los pares iguales para ganar 40 puntos.</p>
+  <div id="memoryBoard" style="display:grid;grid-template-columns:repeat(4, minmax(45px,1fr));gap:7px;margin:12px 0"></div>
+  <p id="memoryStatus">Encuentra los 4 pares.</p>
+  <button class="purple" onclick="startMemory()">🔄 Nuevo juego</button>
+</div>
+</div>
+</section>
+</main>
+
+<!-- MODAL VISTA DE DETALLES DEL JUEGO -->
+<div class="modal-overlay" id="gameModal">
+<div class="modal-content">
+<button class="modal-close" onclick="closeModal()">&times;</button>
+<img id="modalImg" class="modal-img" src="" alt="Juego">
+<h2 id="modalTitle"></h2>
+<p><span class="tag" id="modalTag"></span></p>
+<p id="modalDesc" style="color:#ccc;line-height:1.5"></p>
+<h3 class="price" id="modalPrice"></h3>
+<div style="display:flex;gap:10px;margin-top:20px">
+<button class="purple" id="modalTrailerBtn" style="flex:1">🎬 Ver tráiler/gameplay</button>
+<button class="green" id="modalCartBtn" style="flex:1">🛒 Añadir al carrito</button>
+</div>
+</div>
+</div>
+
+<!-- SIDEBAR CARRITO -->
+<aside class="cart-sidebar" id="cartSidebar">
+<div class="cart-header">
+<h2>🛒 Tu Carrito</h2>
+<button class="red" onclick="toggleCart()">✕ Cerrar</button>
+</div>
+<div class="cart-items" id="cartItems"></div>
+<div class="cart-footer">
+<h3>Total: <span id="cartTotal" class="price">$0 MXN</span></h3>
+<button class="green" style="width:100%" onclick="checkout()">Finalizar compra</button>
+</div>
+</aside>
+
+<footer>
+🎮 GameZone PLAY · Proyecto de tienda gamer<br>
+<small>Precios de demostración en pesos mexicanos ($10 - $150 MXN). Ofertas especiales.</small>
+</footer>
+
+<script>
+// Lista de 100 juegos [Nombre, Categoría, Precio ($10 - $150), SteamID, Descripción]
+const products = [
+  // 👻 TERROR (16)
+  ["Resident Evil 4", "Terror", 145, "2050650", "Supervive al terror definitivo en una aldea europea dominada por una oscura secta."],
+  ["The Forest", "Terror", 85, "242760", "Como único superviviente de un accidente de avión, debes sobrevivir a mutantes caníbales."],
+  ["Phasmophobia", "Terror", 95, "739630", "Investigación paranormal cooperativa de 4 jugadores donde debes identificar espíritus."],
+  ["Project Zomboid", "Terror", 110, "108600", "El simulador definitivo de supervivencia zombi sandbox."],
+  ["Dead by Daylight", "Terror", 125, "381210", "Un juego de acción multijugador (4vs1) donde un jugador es el Asesino brutal."],
+  ["Outlast", "Terror", 45, "238320", "El terror habita en un manicomio abandonado donde tu única defensa es huir o esconderte."],
+  ["Outlast 2", "Terror", 65, "414700", "Una caminata en el desierto te lleva a descubrir secretos oscuros y religiosos."],
+  ["Little Nightmares", "Terror", 70, "424840", "Sumérgete en una oscura y misteriosa historia que te enfrentará a tus miedos infantiles."],
+  ["Little Nightmares II", "Terror", 135, "1087100", "Regresa al fascinante e inquietante mundo de Little Nightmares."],
+  ["Lethal Company", "Terror", 90, "1966720", "Recoge chatarra en lunas abandonadas para cumplir la cuota de la Compañía."],
+  ["Sons of the Forest", "Terror", 140, "1326470", "Enviado a buscar a un multimillonario perdido en una isla infestada de caníbales."],
+  ["Dying Light", "Terror", 99, "239140", "Juego de acción en primera persona en un mundo abierto plagado de zombis."],
+  ["Alien: Isolation", "Terror", 115, "214490", "Descubre el verdadero significado del miedo en un ambiente de constante tensión."],
+  ["Amnesia: The Dark Descent", "Terror", 35, "57300", "Un juego de supervivencia en primera persona en el que debes sobrevivir sumergido en la pesadilla."],
+  ["PACIFY", "Terror", 40, "967050", "Corre por tu vida mientras investigas una casa antigua encantada."],
+  ["Devour", "Terror", 55, "1274570", "Juego cooperativo de supervivencia y terror de 1 a 4 jugadores."],
+
+  // 🗺️ AVENTURA (22)
+  ["Elden Ring", "Aventura", 150, "1245620", "Un vasto mundo lleno de peligros y descubrimientos te espera en la Tierra Intermedia."],
+  ["Hogwarts Legacy", "Aventura", 145, "990080", "Vive una aventura RPG de mundo abierto en el universo del mundo mágico de Harry Potter."],
+  ["Red Dead Redemption 2", "Aventura", 140, "1174180", "Una épica historia sobre la vida en el corazón de América en los albores de la era moderna."],
+  ["The Witcher 3", "Aventura", 95, "292030", "Geralt de Rivia es un cazador de monstruos en busca de la niña de la profecía."],
+  ["Fallout 4", "Aventura", 75, "377160", "Como único superviviente del Refugio 111, entras en un mundo destruido por la guerra nuclear."],
+  ["Fallout: New Vegas", "Aventura", 40, "22380", "Siente el calor en Vegas mientras luchas por el control del Mojave."],
+  ["ARK: Survival Evolved", "Aventura", 85, "346110", "Varado en una isla misteriosa, debes aprender a cazar, domar y criar dinosaurios."],
+  ["Hollow Knight", "Aventura", 65, "367520", "Una aventura de acción en 2D en un reino ruinoso de insectos y héroes."],
+  ["Subnautica", "Aventura", 105, "264710", "Desciende a las profundidades de un mundo alienígena submarino lleno de maravillas."],
+  ["Subnautica: Below Zero", "Aventura", 120, "848450", "Sumérgete en una aventura bajo cero en una región ártica del planeta 4546B."],
+  ["No Man's Sky", "Aventura", 130, "275850", "Un juego de exploración y supervivencia en un universo infinito generado procedimentalmente."],
+  ["Path of Exile", "Aventura", 10, "238960", "Un RPG de acción gratuito ambientado en el oscuro mundo fantástico de Wraeclast."],
+  ["Raft", "Aventura", 80, "648800", "Sobrevive en una balsa flotante en el océano abierto recolectando escombros."],
+  ["Palworld", "Aventura", 135, "1623730", "Colecciona misteriosas criaturas llamadas 'Pals' para luchar, construir y trabajar."],
+  ["Minecraft Dungeons", "Aventura", 90, "1672970", "Aventúrate en una experiencia de mazmorras clásica inspirada en el universo Minecraft."],
+  ["Human: Fall Flat", "Aventura", 45, "477160", "Divertido juego de plataformas flotantes basado en físicas disparatadas."],
+  ["Starfield", "Aventura", 149, "1716740", "El primer universo nuevo en más de 25 años de Bethesda Game Studios."],
+  ["Terraria", "Aventura", 50, "105600", "¡Excava, lucha, explora, construye! Nada es imposible en este juego de aventura."],
+  ["Sea of Thieves", "Aventura", 125, "1172620", "Vive la vida pirata definitiva explorando un vasto océano abierto con tus amigos."],
+  ["Valheim", "Aventura", 110, "892970", "Un brutal juego de exploración y supervivencia para 1 a 10 jugadores ambientado en la cultura vikinga."],
+  ["Monster Hunter: World", "Aventura", 130, "582010", "Caza monstruos gigantescos en un ecosistema viviente lleno de sorpresas."],
+  ["Grounding", "Aventura", 95, "962130", "El mundo es un lugar enorme, hermoso y peligroso cuando te han encogido al tamaño de una hormiga."],
+
+  // 🔫 ACCIÓN (24)
+  ["Grand Theft Auto V", "Acción", 120, "271590", "Explora los mundos entrelazados de Franklin, Michael y Trevor en Los Santos."],
+  ["Cyberpunk 2077", "Acción", 140, "1091500", "Un RPG de acción y aventura en mundo abierto ambientado en Night City."],
+  ["Street Fighter 6", "Acción", 145, "1364780", "La nueva evolución de la saga de lucha emblemática de Capcom."],
+  ["Left 4 Dead 2", "Acción", 25, "550", "Juego cooperativo de acción y supervivencia frente a hordas de infectados."],
+  ["Left 4 Dead", "Acción", 20, "500", "El clásico shooter cooperativo de zombis en primera persona."],
+  ["Hades", "Acción", 85, "1145360", "Desafía al dios del inframundo mientras luchas por escapar de él en este roguelike."],
+  ["Cuphead", "Acción", 75, "268910", "Juego de acción clásico centrado en combates contra jefes con estética de 1930."],
+  ["Team Fortress 2", "Acción", 10, "440", "Uno de los juegos de acción multijugador en línea más populares."],
+  ["Warframe", "Acción", 15, "230410", "Un juego de acción cooperativo en tercera persona ambientado en un mundo de ciencia ficción."],
+  ["BattleBit Remastered", "Acción", 70, "671860", "Un FPS multijugador masivo de estilo bajo poligonaje con mapas destructibles."],
+  ["Counter-Strike 2", "Acción", 10, "730", "La evolución del shooter táctico definitivo basado en la precisión por equipos."],
+  ["PUBG: BATTLEGROUNDS", "Acción", 15, "578080", "Aterriza en ubicaciones estratégicas, saquea armas y sobrevive para ganar."],
+  ["Apex Legends", "Acción", 10, "1172470", "Un hero shooter gratuito donde personajes legendarios luchan en los confines del espacio."],
+  ["Destiny 2", "Acción", 15, "1085660", "Sumérgete en el mundo de Destiny 2 para explorar los misterios del sistema solar."],
+  ["Doom Eternal", "Acción", 110, "782330", "Los ejércitos del infierno han invadido la Tierra. Conviértete en el Cazador."],
+  ["DOOM (2016)", "Acción", 60, "379720", "Demonios sin piedad, armas de destrucción masiva y un movimiento rápido y fluido."],
+  ["Helldivers 2", "Acción", 150, "553850", "Lucha por la libertad en una galaxia hostil en este shooter cooperativo."],
+  ["PAYDAY 2", "Acción", 30, "218620", "Un shooter cooperativo de cuatro jugadores que permite ejecutar atracos a bancos."],
+  ["PAYDAY 3", "Acción", 135, "1272080", "La esperada secuela de uno de los shooters cooperativos más populares."],
+  ["Ultrakill", "Acción", 95, "1229490", "Un fast-paced ultra-violento retro FPS donde la sangre es combustible."],
+  ["Risk of Rain 2", "Acción", 80, "632360", "Escapa de un planeta alienígena caótico luchando contra hordas de monstruos frenéticos."],
+  ["Brawlhalla", "Acción", 10, "291550", "Un juego de lucha de plataformas épico para hasta 8 jugadores online."],
+  ["Hotline Miami", "Acción", 25, "219150", "Un juego de acción de alto impacto lleno de brutalidad extrema y tiroteos."],
+  ["Hotline Miami 2", "Acción", 35, "274170", "La conclusión brutal de la saga Hotline Miami."],
+
+  // 🏎️ CARRERAS (12)
+  ["Forza Horizon 5", "Carreras", 145, "1551360", "Explora los vibrantes paisajes de mundo abierto de México con una conducción sin límites."],
+  ["Forza Horizon 4", "Carreras", 110, "1293830", "Las estaciones dinámicas lo cambian todo en el festival de automoción más grande del mundo."],
+  ["Euro Truck Simulator 2", "Carreras", 65, "227300", "Viaja por Europa como el rey de la carretera delivering importantes mercancías."],
+  ["American Truck Simulator", "Carreras", 65, "270880", "Experimenta los legendarios camiones americanos y entrega diversas cargas por EE.UU."],
+  ["Sonic Mania", "Carreras", 50, "584400", "Una experiencia Sonic definitiva en 2D a la velocidad de la luz."],
+  ["Trackmania", "Carreras", 10, "2225070", "El remake del famoso juego de carreras de acrobacias de Ubisoft."],
+  ["Fall Guys", "Carreras", 15, "1097150", "Compite en carreras de obstáculos caóticas con docenas de otros jugadores online."],
+  ["Rocket League", "Carreras", 15, "252950", "Un híbrido de fútbol de alta potencia y caos con vehículos."],
+  ["Need for Speed Unbound", "Carreras", 130, "1846380", "Demuestra que tienes lo que hay que tener para ganar el Grand, el desafío de carreras definitivo."],
+  ["Need for Speed Heat", "Carreras", 95, "1299930", "Pilota de día y arriésgalo todo de noche en una experiencia de carreras trepidante."],
+  ["Assetto Corsa", "Carreras", 45, "244210", "Un simulador de carreras de nueva generación centrado en un realismo de conducción puro."],
+  ["Dirt Rally 2.0", "Carreras", 55, "690790", "Pisa a fondo por las pistas de rally más emblemáticas del mundo."],
+
+  // 🌱 INDIE (14)
+  ["Stardew Valley", "Indie", 55, "413150", "Heredaste el viejo terreno de cultivo de tu abuelo en Stardew Valley. ¡Crea tu granja!"],
+  ["Among Us", "Indie", 20, "945360", "Un juego multijugador local o en línea sobre trabajo en equipo y traición en el espacio."],
+  ["Celeste", "Indie", 60, "504230", "Ayuda a Madeline a sobrevivir a sus demonios internos en su viaje a la cima de la montaña."],
+  ["Geometry Dash", "Indie", 25, "322170", "Salta y vuela a través del peligro en este juego de plataformas basado en el ritmo."],
+  ["Don't Starve Together", "Indie", 50, "322330", "Sobrevive en un mundo implacable lleno de ciencia y magia con tus amigos."],
+  ["Undertale", "Indie", 40, "391540", "Un RPG donde no tienes que matar a nadie. Cada enemigo puede ser pacificado."],
+  ["Deltarune", "Indie", 15, "1671210", "La secuela / historia paralela creada por Toby Fox, creador de Undertale."],
+  ["Dave the Diver", "Indie", 95, "1868140", "Un RPG casual de exploración marina y pesca durante el día, y gestión de sushi bar."],
+  ["Vampire Survivors", "Indie", 35, "1794680", "Sé la pesadilla de los monstruos en este juego de supervivencia casual."],
+  ["Dead Cells", "Indie", 85, "588650", "Un juego de plataformas roguelite de acción inspirado en castlevania."],
+  ["Binding of Isaac: Rebirth", "Indie", 65, "250900", "Un RPG de acción generado aleatoriamente con elementos de juego de tiros."],
+  ["SLAY THE SPIRE", "Indie", 75, "646570", "Fusión entre juegos de cartas y roguelike táctico."],
+  ["Untitled Goose Game", "Indie", 65, "837470", "Es un día encantador en el pueblo y eres un ganso muy malévolo."],
+  ["Garry's Mod", "Indie", 40, "4000", "Un sandbox físico donde no hay objetivos predeterminados. ¡Tú pones las reglas!"],
+
+  // 🧩 ESTRATEGIA (12)
+  ["Portal 2", "Estrategia", 30, "620", "Resuelve puzles basados en portales en las instalaciones de Aperture Science."],
+  ["Portal", "Estrategia", 20, "400", "El innovador título que cambió la forma en que los jugadores interactúan con el entorno."],
+  ["The Sims 4", "Estrategia", 10, "1222670", "Desata tu imaginación y crea un mundo único de Sims que sea una expresión de ti mismo."],
+  ["Dota 2", "Estrategia", 10, "570", "Millones de jugadores en todo el mundo entran en batalla a diario como héroes."],
+  ["Age of Empires II: Definitive Edition", "Estrategia", 95, "813780", "Celebra el aniversario de uno de los juegos de estrategia más populares."],
+  ["Age of Empires IV", "Estrategia", 140, "1466860", "Uno de los juegos de estrategia en tiempo real más queridos vuelve a la gloria."],
+  ["Civilization VI", "Estrategia", 85, "289070", "Construye un imperio que resista la prueba del tiempo y lidera a tu civilización."],
+  ["Cities: Skylines", "Estrategia", 90, "255710", "Una versión moderna de los simuladores de ciudades clásicos."],
+  ["Cities: Skylines II", "Estrategia", 150, "949230", "Crea y gestiona tu propia ciudad sin límites en la simulación más realista."],
+  ["RimWorld", "Estrategia", 125, "294100", "Un simulador de colonias impulsado por una IA que genera historias increíbles."],
+  ["Plague Inc: Evolved", "Estrategia", 50, "246620", "Una combinación única de alta estrategia y simulación horriblemente realista."],
+  ["Bloons TD 6", "Estrategia", 45, "960090", "Crea tu defensa perfecta con una combinación de increíbles torres de monos."]
+];
+
+// Carrito de compras y almacenamiento
+let cart = JSON.parse(localStorage.getItem("gamezoneCart") || "[]");
+
+function updateCartUI(){
+  document.getElementById("cartCount").textContent = cart.length;
+  const itemsContainer = document.getElementById("cartItems");
+  if(cart.length === 0){
+    itemsContainer.innerHTML = "<p style='color:#aaa;text-align:center;'>Tu carrito está vacío.</p>";
+  } else {
+    itemsContainer.innerHTML = cart.map((item, index) => `
+      <div class="cart-item">
+        <div>
+          <strong>${item.name}</strong>
+          <div style="color:#5ee6ad;font-size:14px">${money(item.price)}</div>
+        </div>
+        <button class="red" style="padding:4px 8px;" onclick="removeFromCart(${index})">🗑️</button>
+      </div>
+    `).join("");
+  }
+  const total = cart.reduce((sum, i) => sum + i.price, 0);
+  document.getElementById("cartTotal").textContent = money(total);
+  localStorage.setItem("gamezoneCart", JSON.stringify(cart));
+}
+
+function addToCart(name, price){
+  cart.push({name, price});
+  updateCartUI();
+  alert("🛒 ¡"+name+" se añadió a tu carrito!");
+}
+
+function removeFromCart(index){
+  cart.splice(index, 1);
+  updateCartUI();
+}
+
+function toggleCart(){
+  document.getElementById("cartSidebar").classList.toggle("open");
+}
+
+function checkout(){
+  if(cart.length === 0){
+    alert("El carrito está vacío.");
+    return;
+  }
+  alert("🎉 ¡Gracias por tu compra de prueba! Los juegos han sido procesados.");
+  cart = [];
+  updateCartUI();
+  toggleCart();
+}
+
+function money(n){
+  return n === 0 ? "Gratis" : n.toLocaleString("es-MX", {style:"currency", currency:"MXN", maximumFractionDigits:0});
+}
+
+function showGames(){
+  const q = document.getElementById("search").value.toLowerCase();
+  const cat = document.getElementById("category").value;
+  const order = document.getElementById("order").value;
+  
+  let list = products.filter(p => p[0].toLowerCase().includes(q) && (!cat || p[1] === cat));
+  const categoryOrder = ["Terror", "Aventura", "Acción", "Carreras", "Indie", "Estrategia"];
+  
+  if(order === "") list.sort((a,b) => categoryOrder.indexOf(a[1]) - categoryOrder.indexOf(b[1]));
+  if(order === "low") list.sort((a,b) => a[2] - b[2]);
+  if(order === "high") list.sort((a,b) => b[2] - a[2]);
+  if(order === "az") list.sort((a,b) => a[0].localeCompare(b[0]));
+  
+  document.getElementById("resultCount").textContent = list.length + " juegos";
+  document.getElementById("games").innerHTML = list.map(p => `
+    <article class="game">
+      <div class="game-image">
+        <img loading="lazy"
+          src="https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/${p[3]}/header.jpg"
+          alt="Imagen de ${p[0]}"
+          onerror="if(!this.dataset.secondTry){this.dataset.secondTry='1';this.src='https://cdn.akamai.steamstatic.com/steam/apps/${p[3]}/header.jpg'}else{this.style.display='none';this.nextElementSibling.style.display='flex'}">
+        <div class="image-fallback"><span class="emoji">🎮</span><span>${p[0]}</span></div>
+      </div>
+      <div class="game-info">
+        <div class="tag">${p[1]}</div>
+        <h3>${p[0]}</h3>
+        <div class="price">${money(p[2])}</div>
+        <div class="game-btns">
+          <button class="purple" onclick="openModal('${p[0].replace(/'/g,"\\'")}')">👁️ Ver</button>
+          <button class="green" onclick="addToCart('${p[0].replace(/'/g,"\\'")}', ${p[2]})">🛒 Añadir</button>
+        </div>
+      </div>
+    </article>
+  `).join("");
+}
+
+// Modal de detalles y tráiler
+function openModal(name){
+  const item = products.find(p => p[0] === name);
+  if(!item) return;
+  document.getElementById("modalTitle").textContent = item[0];
+  document.getElementById("modalTag").textContent = item[1];
+  document.getElementById("modalDesc").textContent = item[4];
+  document.getElementById("modalPrice").textContent = money(item[2]);
+  document.getElementById("modalImg").src = `https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/${item[3]}/header.jpg`;
+  
+  document.getElementById("modalTrailerBtn").onclick = () => {
+    window.open(`https://www.youtube.com/results?search_query=${encodeURIComponent(item[0] + " trailer gameplay")}`, "_blank");
+  };
+  
+  document.getElementById("modalCartBtn").onclick = () => {
+    addToCart(item[0], item[2]);
+    closeModal();
+  };
+  
+  document.getElementById("gameModal").classList.add("active");
+}
+
+function closeModal(){
+  document.getElementById("gameModal").classList.remove("active");
+}
+
+// Minijuegos - Sistema de Puntos
+let totalPoints = Number(localStorage.getItem("gamezonePoints") || 0);
+function updatePoints(){
+  document.getElementById("totalPoints").textContent = totalPoints;
+  localStorage.setItem("gamezonePoints", totalPoints);
+}
+function awardPoints(amount, reason){
+  totalPoints += amount;
+  updatePoints();
+  alert("🏆 ¡Ganaste "+amount+" puntos! "+reason+"\nTotal: "+totalPoints+" puntos.");
+}
+
+// Tres en raya
+let cells = Array(9).fill("");
+let ticOver = false;
+function drawTic(){
+  const b = document.getElementById("board");
+  b.innerHTML = "";
+  cells.forEach((v,i) => {
+    const btn = document.createElement("button");
+    btn.textContent = v || " ";
+    btn.style.cssText = "width:65px;height:65px;font-size:27px;background:#383852;color:white";
+    btn.onclick = () => moveTic(i);
+    b.appendChild(btn);
+  });
+}
+function moveTic(i){
+  if(cells[i] || ticOver) return;
+  cells[i] = "X";
+  if(ticWin("X")){
+    document.getElementById("ticStatus").textContent = "¡Ganó X!";
+    ticOver = true;
+    awardPoints(50, "Ganaste tres en raya.");
+  } else if(cells.every(Boolean)){
+    document.getElementById("ticStatus").textContent = "¡Empate!";
+    ticOver = true;
+  } else {
+    let empty = cells.map((v,i) => v ? null : i).filter(v => v !== null);
+    cells[empty[Math.floor(Math.random() * empty.length)]] = "O";
+    if(ticWin("O")){
+      document.getElementById("ticStatus").textContent = "Ganó O";
+      ticOver = true;
+    } else if(cells.every(Boolean)){
+      document.getElementById("ticStatus").textContent = "¡Empate!";
+      ticOver = true;
+    } else document.getElementById("ticStatus").textContent = "Tu turno: X";
+  }
+  drawTic();
+}
+function ticWin(s){
+  return [[0,1,2],[3,4,5],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]].some(a => a.every(i => cells[i] === s));
+}
+function resetTic(){
+  cells = Array(9).fill("");
+  ticOver = false;
+  document.getElementById("ticStatus").textContent = "Turno: X";
+  drawTic();
+}
+
+// Adivina el número
+let secret = Math.floor(Math.random()*100) + 1;
+let guessAwarded = false;
+function checkGuess(){
+  const n = Number(document.getElementById("guess").value);
+  const out = document.getElementById("guessStatus");
+  if(!n || n < 1 || n > 100){ out.textContent = "Escribe un número del 1 al 100."; return; }
+  if(n === secret){
+    out.textContent = "🎉 ¡Correcto! ¡Lo adivinaste!";
+    if(!guessAwarded){ guessAwarded = true; awardPoints(25, "Adivinaste el número secreto."); }
+  } else out.textContent = n < secret ? "⬆️ Prueba con uno más grande." : "⬇️ Prueba con uno más pequeño.";
+}
+function newGuess(){
+  secret = Math.floor(Math.random()*100) + 1;
+  guessAwarded = false;
+  document.getElementById("guess").value = "";
+  document.getElementById("guessStatus").textContent = "Nuevo número. ¡Inténtalo!";
+}
+
+// Reto de reflejos
+let score = 0, clickActive = false, clickTimer;
+function startClickGame(){
+  clearTimeout(clickTimer); score = 0; clickActive = true;
+  document.getElementById("clickScore").textContent = score;
+  document.getElementById("clickStatus").textContent = "¡Ya! Tienes 10 segundos.";
+  clickTimer = setTimeout(() => {
+    clickActive = false;
+    document.getElementById("clickStatus").textContent = "⏱️ Terminó. Puntuación: " + score;
+    if(score >= 30) awardPoints(20, "Superaste 30 pulsaciones.");
+  }, 10000);
+}
+function tapGame(){
+  if(!clickActive) return;
+  score++;
+  document.getElementById("clickScore").textContent = score;
+}
+
+// Piedra, papel o tijera
+function playRPS(user){
+  const choices = ["piedra", "papel", "tijera"];
+  const cpu = choices[Math.floor(Math.random()*3)];
+  let result = user === cpu ? "¡Empate!" : (
+    (user === "piedra" && cpu === "tijera") ||
+    (user === "papel" && cpu === "piedra") ||
+    (user === "tijera" && cpu === "papel") ? "¡Ganaste! +10 puntos." : "Ganó la computadora. ¡Intenta otra vez!"
+  );
+  document.getElementById("rpsStatus").textContent = "Tú: " + user + " | Computadora: " + cpu + " — " + result;
+  if(result.startsWith("¡Ganaste")) awardPoints(10, "Ganaste piedra, papel o tijera.");
+}
+
+// Juego de memoria
+let memoryValues = [], memoryOpen = [], memoryMatches = 0, memoryLock = false, memoryAwarded = false;
+function startMemory(){
+  memoryValues = ["🐱","🐶","🐸","🦊","🐱","🐶","🐸","🦊"].sort(() => Math.random() - 0.5);
+  memoryOpen = []; memoryMatches = 0; memoryLock = false; memoryAwarded = false;
+  const board = document.getElementById("memoryBoard"); board.innerHTML = "";
+  memoryValues.forEach((value, index) => {
+    const card = document.createElement("button");
+    card.textContent = "❔"; card.dataset.index = index;
+    card.style.cssText = "height:58px;font-size:24px;background:#383852;color:white";
+    card.onclick = () => flipMemory(index, card);
+    board.appendChild(card);
+  });
+  document.getElementById("memoryStatus").textContent = "Encuentra los 4 pares.";
+}
+function flipMemory(index, card){
+  if(memoryLock || card.textContent !== "❔") return;
+  card.textContent = memoryValues[index]; memoryOpen.push({index, card});
+  if(memoryOpen.length === 2){
+    const [a, b] = memoryOpen;
+    if(memoryValues[a.index] === memoryValues[b.index]){
+      memoryMatches++; memoryOpen = [];
+      document.getElementById("memoryStatus").textContent = "¡Pareja encontrada! " + memoryMatches + "/4";
+      if(memoryMatches === 4 && !memoryAwarded){
+        memoryAwarded = true;
+        document.getElementById("memoryStatus").textContent = "🏆 ¡Completaste la memoria! +40 puntos.";
+        awardPoints(40, "Completaste el juego de memoria.");
+      }
+    } else {
+      memoryLock = true;
+      setTimeout(() => { a.card.textContent = "❔"; b.card.textContent = "❔"; memoryOpen = []; memoryLock = false; }, 750);
+    }
+  }
+}
+
+// Mini carrera en canvas
+const canvas = document.getElementById("raceCanvas");
+const ctx = canvas.getContext("2d");
+let carX = 140, obstacles = [], raceOn = false, raceScore = 0, keys = {}, raceLoop;
+function drawRace(){
+  ctx.fillStyle = "#282d37"; ctx.fillRect(0, 0, 320, 400);
+  ctx.fillStyle = "#414655"; ctx.fillRect(45, 0, 230, 400);
+  ctx.strokeStyle = "white"; ctx.lineWidth = 4; ctx.setLineDash([22, 18]);
+  ctx.beginPath(); ctx.moveTo(160, 0); ctx.lineTo(160, 400); ctx.stroke(); ctx.setLineDash([]);
+  ctx.fillStyle = "#d946ef"; ctx.fillRect(carX, 330, 32, 48);
+  ctx.fillStyle = "#fff"; ctx.fillRect(carX + 5, 337, 22, 10);
+  obstacles.forEach(o => { ctx.fillStyle = "#f59e0b"; ctx.fillRect(o.x, o.y, 32, 38); });
+  ctx.fillStyle = "white"; ctx.font = "16px Arial"; ctx.fillText("Puntos: " + raceScore, 8, 22);
+}
+function startRace(){
+  clearInterval(raceLoop); carX = 140; obstacles = []; raceScore = 0; raceOn = true;
+  document.getElementById("raceStatus").textContent = "¡Esquiva los bloques! Usa ← y →.";
+  raceLoop = setInterval(() => {
+    if(keys.ArrowLeft) carX = Math.max(48, carX - 5);
+    if(keys.ArrowRight) carX = Math.min(240, carX + 5);
+    if(Math.random() < 0.035) obstacles.push({x: 55 + Math.random() * 210, y: -40});
+    obstacles.forEach(o => o.y += 4);
+    obstacles = obstacles.filter(o => o.y < 420);
+    if(obstacles.some(o => o.x < carX + 28 && o.x + 32 > carX && o.y < 378 && o.y + 38 > 330)){
+      raceOn = false; clearInterval(raceLoop);
+      document.getElementById("raceStatus").textContent = "💥 ¡Choque! Puntuación: " + raceScore + ". Pulsa empezar para volver a jugar.";
+      if(raceScore >= 100) awardPoints(20, "Conseguiste más de 100 puntos en la carrera.");
+    } else {
+      raceScore++;
+      drawRace();
+    }
+  }, 50);
+}
+document.addEventListener("keydown", e => {
+  if(["ArrowLeft","ArrowRight"].includes(e.key)) e.preventDefault();
+  keys[e.key] = true;
+});
+document.addEventListener("keyup", e => keys[e.key] = false);
+
+// Inicialización
+drawTic();
+drawRace();
+showGames();
+updateCartUI();
+updatePoints();
+</script>
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Código QR Centrado</title>
+<style>
+  body, html {
+    height: 100%;
+    margin: 0;
+    background: #0b0b14;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: white;
+    font-family: Arial, sans-serif;
+    flex-direction: column;
+  }
+  #qrcode {
+    padding: 20px;
+    background: #171725;
+    border-radius: 12px;
+    box-shadow: 0 0 15px #8055ffaa;
+  }
+  h2 {
+    margin-bottom: 20px;
+  }
+</style>
+</head>
+<body>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Reseña GameZone PLAY</title>
+<style>
+  body {
+    background: #0b0b14;
+    color: white;
+    font-family: Arial, sans-serif;
+    margin: 40px;
+    max-width: 700px;
+  }
+  h1, h2, h3 {
+    color: #b49aff;
+  }
+  a {
+    color: #8055ff;
+  }
+</style>
+</head>
+<body>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>GameZone Play</title>
+    <!-- 1. Librería necesaria para los QR -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+</head>
+<body>
